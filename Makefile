@@ -15,4 +15,4 @@ instr.h: run.c
 
 .PHONY: clean
 clean:
-	rm exec instr.h *.o
+	rm -- exec instr.h *.o
