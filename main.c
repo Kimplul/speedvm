@@ -4,37 +4,37 @@
 
 void compile_ldrc(uint64_t *p, uint16_t reg, int32_t val){
 	*p = LDRC
-		| ((uint64_t)reg << 16)
-		| ((uint64_t)val << 32)
+		| ((uint64_t)reg << 0x10)
+		| ((uint64_t)val << 0x20)
 		;
 }
 
 void compile_add(uint64_t *p, uint16_t src0, uint16_t src1, uint16_t dst){
 	*p = ADD
-		| ((uint64_t)src0 << 16)
-		| ((uint64_t)src1 << 32)
-		| ((uint64_t)dst << 48)
+		| ((uint64_t)src0 << 0x10)
+		| ((uint64_t)src1 << 0x20)
+		| ((uint64_t)dst << 0x30)
 		;
 }
 
 void compile_sub(uint64_t *p, uint16_t src0, uint16_t src1, uint16_t dst){
 	*p = SUB
-		| ((uint64_t)src0 << 16)
-		| ((uint64_t)src1 << 32)
-		| ((uint64_t)dst << 48)
+		| ((uint64_t)src0 << 0x10)
+		| ((uint64_t)src1 << 0x20)
+		| ((uint64_t)dst << 0x30)
 		;
 }
 
 void compile_j(uint64_t *p, int32_t offset){
 	*p = J
-		| ((uint64_t)offset << 16)
+		| ((uint64_t)offset << 0x10)
 		;
 }
 
 void compile_jz(uint64_t *p, uint16_t reg, int32_t offset){
 	*p = JZ
-		| ((uint64_t)reg << 16)
-		| ((uint64_t)offset << 32)
+		| ((uint64_t)reg << 0x10)
+		| ((uint64_t)offset << 0x20)
 		;
 }
 
@@ -60,7 +60,7 @@ int main(){
 
 	compile_end(&p[9]);
 
-	printf("%llu\n", run(p)); 
+	printf("%lu\n", run(p)); 
 
 	return 0;
 }

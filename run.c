@@ -1,78 +1,64 @@
 #include <stdint.h>
 
+#define OPCODE(x) ((uint16_t)(x))
+
+#define RSLOT1(x) ((uint16_t)((x) >> 0x10))
+#define RSLOT2(x) ((uint16_t)((x) >> 0x20))
+#define RSLOT3(x) ((uint16_t)((x) >> 0x30))
+
+#define VSLOT1(x) ((int32_t)((x) >> 0x10))
+#define VSLOT2(x) ((int32_t)((x) >> 0x20))
+
 uint64_t run(uint64_t *p){
-	uint64_t result = 0;
-	uint64_t registers[0xffff] = {0};
+	int64_t result = 0;
+	int64_t registers[0xffff] = {0};
+	--p;
 
-	// TODO: Optimize
-	asm(
-		"top_run:\n"
-		"mov (%[p]), %%rax\n"
-		"add $0x08, %[p]\n"
-		"lea (%%rip), %%rcx\n"
-		"add %%ax, %%cx\n"
-		"add $9, %%rcx\n"
-		"jmp *%%rcx\n"
+top:
+	p++;
+	asm goto (
+			"START_INSNS:\n"
+			"lea 5(%%rip), %%rax\n"
+			"add %[p], %%rax\n"
+			"jmp *%%rax\n"
+			: /* no output */
+			: [p] "g" ((uint64_t)OPCODE(*p))
+			: "rax", "cc"
+			: LDRC, ADD, SUB, JZ, J, END
+	    );
 
-		"END:\n"
-		"jmp end_run\n" // 0, END
+END:
+	asm("END:\n");
+	goto bottom;
 
-		"J:\n"
-		"shr $0x10, %%rax\n" // ?, J
-		"movsx %%eax, %%rax\n"
-		"add %%rax, %[p]\n"
-		"jmp top_run\n"
+LDRC:
+	asm("LDRC:\n");
+	registers[RSLOT1(*p)] = VSLOT2(*p);
+	goto top;
 
-		"JZ:\n"
-		"shr $0x10, %%rax\n" // ?, JZ
-		"movzx %%ax, %%rcx\n"
-		"mov (%[reg],%%rcx, 8), %%rcx\n"
-		"add $0x0, %%rcx\n"
-		"jnz top_run\n"
-		"shr $0x10, %%rax\n"
-		"movsx %%eax, %%rax\n"
-		"add %%rax, %[p]\n"
-		"jmp top_run\n"
+ADD:
+	asm("ADD:\n");
+	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
+	goto top;
 
-		"ADD:\n"
-		"shr $0x10, %%rax\n" // ?, ADD
-		"movzx %%ax, %%rcx\n"
-		"shr $0x10, %%rax\n"
-		"movzx %%ax, %%r8\n"
-		"shr $0x10, %%rax\n"
-		"movzx %%ax, %%rax\n"
-		"mov (%[reg], %%r8, 8), %%r8\n"
-		"add (%[reg], %%rcx, 8), %%r8\n"
-		"mov %%r8, (%[reg], %%rax, 8)\n"
-		"jmp top_run\n"
+SUB:
+	asm("SUB:\n");
+	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
+	goto top;
 
-		"SUB:\n"
-		"shr $0x10, %%rax\n" // ?, SUB
-		"movzx %%ax, %%rcx\n"
-		"shr $0x10, %%rax\n"
-		"movzx %%ax, %%r8\n"
-		"shr $0x10, %%rax\n"
-		"movzx %%ax, %%rax\n"
-		"mov (%[reg], %%r8, 8), %%r8\n"
-		"sub (%[reg], %%rcx, 8), %%r8\n"
-		"mov %%r8, (%[reg], %%rax, 8)\n"
-		"jmp top_run\n"
+JZ:
+	asm("JZ:\n");
+	p += (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0) >> 0x3;
+	goto top;
 
-		"LDRC:\n"
-		"shr $0x10, %%rax\n" // ?, LDRC
-		"movzx %%ax, %%rcx\n"
-		"shr $0x10, %%rax\n"
-		"movsx %%eax, %%rax\n"
-		"mov %%rax, (%[reg], %%rcx, 8)\n"
-		"jmp top_run\n"
+J:
+	asm("J:\n");
+	p += VSLOT1(*p) >> 0x3;
+	goto top;
 
-		"end_run:\n"
-		"mov 24(%[reg]), %[r]\n"
+bottom:
 
-		: [r] "=r" (result)
-		: [p] "r" (p), [reg] "r" (registers)
-		: "rax", "rcx", "r8"
-	);
+	result = registers[3];
 
 	return result;
 }
