@@ -4,6 +4,7 @@ uint64_t run(uint64_t *p){
 	uint64_t result = 0;
 	uint64_t registers[0xffff] = {0};
 
+	// TODO: Optimize
 	asm(
 		"top_run:\n"
 		"mov (%[p]), %%rax\n"
@@ -18,16 +19,16 @@ uint64_t run(uint64_t *p){
 
 		"J:\n"
 		"shr $0x10, %%rax\n" // ?, J
+		"movsx %%eax, %%rax\n"
 		"add %%rax, %[p]\n"
 		"jmp top_run\n"
 
 		"JZ:\n"
 		"shr $0x10, %%rax\n" // ?, JZ
-		"mov %%rax, %%rcx\n"
-		"and $0xffff, %%rcx\n"
-		"mov (%[reg],%%rcx), %%rcx\n"
-		"test $0x0, %%cx\n"
-		"jz top_run\n"
+		"movzx %%ax, %%rcx\n"
+		"mov (%[reg],%%rcx, 8), %%rcx\n"
+		"add $0x0, %%rcx\n"
+		"jnz top_run\n"
 		"shr $0x10, %%rax\n"
 		"movsx %%eax, %%rax\n"
 		"add %%rax, %[p]\n"
@@ -35,35 +36,38 @@ uint64_t run(uint64_t *p){
 
 		"ADD:\n"
 		"shr $0x10, %%rax\n" // ?, ADD
-		"movsx %%ax, %%rcx\n"
+		"movzx %%ax, %%rcx\n"
 		"shr $0x10, %%rax\n"
-		"movsx %%ax, %%r8\n"
-		"movsx %%ax, %%rax\n"
-		"mov (%[reg], %%rax), %%rax\n"
-		"add (%[reg], %%rcx), %%rax\n"
-		"mov %%rax, (%[reg], %%r8)\n"
+		"movzx %%ax, %%r8\n"
+		"shr $0x10, %%rax\n"
+		"movzx %%ax, %%rax\n"
+		"mov (%[reg], %%r8, 8), %%r8\n"
+		"add (%[reg], %%rcx, 8), %%r8\n"
+		"mov %%r8, (%[reg], %%rax, 8)\n"
 		"jmp top_run\n"
 
 		"SUB:\n"
 		"shr $0x10, %%rax\n" // ?, SUB
-		"movsx %%ax, %%rcx\n"
+		"movzx %%ax, %%rcx\n"
 		"shr $0x10, %%rax\n"
-		"movsx %%ax, %%r8\n"
-		"movsx %%ax, %%rax\n"
-		"mov (%[reg], %%rax), %%rax\n"
-		"sub (%[reg], %%rcx), %%rax\n"
-		"mov %%rax, (%[reg], %%r8)\n"
+		"movzx %%ax, %%r8\n"
+		"shr $0x10, %%rax\n"
+		"movzx %%ax, %%rax\n"
+		"mov (%[reg], %%r8, 8), %%r8\n"
+		"sub (%[reg], %%rcx, 8), %%r8\n"
+		"mov %%r8, (%[reg], %%rax, 8)\n"
 		"jmp top_run\n"
 
 		"LDRC:\n"
 		"shr $0x10, %%rax\n" // ?, LDRC
-		"movsx %%ax, %%rcx\n"
+		"movzx %%ax, %%rcx\n"
 		"shr $0x10, %%rax\n"
-		"mov %%eax, (%[reg], %%rcx)\n"
+		"movsx %%eax, %%rax\n"
+		"mov %%rax, (%[reg], %%rcx, 8)\n"
 		"jmp top_run\n"
 
 		"end_run:\n"
-		"mov 0x03(%[reg]), %[r]\n"
+		"mov 24(%[reg]), %[r]\n"
 
 		: [r] "=r" (result)
 		: [p] "r" (p), [reg] "r" (registers)

@@ -1,10 +1,8 @@
 exec: run.o main.o
 	$(CC) -g $^ -o $@
 
-main.c: instr.h
-
-%.o: %.c
-	$(CC) -c -g $^ -o $@
+%.o: %.c instr.h
+	$(CC) -c -g $< -o $@
 
 instr.h: run.c
 	@echo "Updating instrs"

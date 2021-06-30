@@ -45,22 +45,22 @@ void compile_end(uint64_t *p){
 int main(){
 	uint64_t p[16] = {0};
 
-	compile_ldrc(&p[0], 0, 1);
-	compile_ldrc(&p[1], 1, 1000000000);
-	compile_ldrc(&p[2], 2, 0);
-	compile_ldrc(&p[3], 3, 0);
+	compile_ldrc(&p[0], 0, 1); // iter
+	compile_ldrc(&p[1], 1, 1000000000); // max
+	compile_ldrc(&p[2], 2, 0); // i
+	compile_ldrc(&p[3], 3, 0); // total
 
-	compile_sub(&p[4], 3, 1, 4);
+	compile_sub(&p[4], 1, 2, 4);
 	compile_jz(&p[5], 4, 24);
 
 	compile_add(&p[6], 2, 3, 3);
-	compile_add(&p[7], 1, 2, 2);
+	compile_add(&p[7], 0, 2, 2);
 
 	compile_j(&p[8], -40);
 
 	compile_end(&p[9]);
 
-	printf("%lli\n", run(p)); 
+	printf("%llu\n", run(p)); 
 
 	return 0;
 }
