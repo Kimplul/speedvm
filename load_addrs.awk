@@ -1,9 +1,10 @@
-/<START_INSNS>:/{
+/INSTR_BEGIN/{
 	init_addr = strtonum($1);
+	next;
 }
 
-/<[A-Z]+>:/{
-	gsub(/[<:>]/, "", $2);
+/[A-Z]+/{
+	gsub(/INSTR_/, "", $2);
 	addrs[$2] = strtonum($1) - init_addr;
 }
 

@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include "instr.h"
 
 #define OPCODE(x) ((uint16_t)(x))
 
@@ -15,13 +14,11 @@
 #define QUOTE(x) #x
 #define INSTR_ASM_SIZE "64"
 
-#define INSTR(x) x: \
-	asm(\
-		".global " QUOTE(x) "\n"\
-		QUOTE(x)":\n"\
-	)
+#define INSTR(x) x: asm(".global " QUOTE(INSTR_##x) "\n" QUOTE(INSTR_##x)":\n")
 
-uint64_t run(int64_t *p){
+__attribute__((no_reorder))
+uint64_t run(int64_t *p)
+{
 	int64_t result = 0;
 	int64_t registers[0xffff] = {0};
 	--p;
@@ -32,7 +29,8 @@ top:
 			"lea 5(%%rip), %%rax\n"
 			"add %[p], %%rax\n"
 			"jmp *%%rax\n"
-			"START_INSNS:\n"
+			".global INSTR_BEGIN\n"
+			"INSTR_BEGIN:\n"
 			: /* no output */
 			: [p] "g" ((uint64_t)OPCODE(*p))
 			: "rax", "cc"
