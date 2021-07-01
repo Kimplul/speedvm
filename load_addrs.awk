@@ -1,4 +1,4 @@
-/<END>:/{
+/<START_INSNS>:/{
 	init_addr = strtonum($1);
 }
 
