@@ -12,7 +12,6 @@
 #define ADDPD(x, y) (int64_t *)(((int8_t *)(x)) + (y))
 
 #define QUOTE(x) #x
-#define INSTR_ASM_SIZE "64"
 
 #define INSTR(x) x: asm(".global " QUOTE(INSTR_##x) "\n" QUOTE(INSTR_##x)":\n")
 
