@@ -1,5 +1,3 @@
-.set INSTR_ASM_SIZE, 64
-
 .macro insn i
 .space INSTR_ASM_SIZE - ((. - START_INSNS) % INSTR_ASM_SIZE)
 .global \i

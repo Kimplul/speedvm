@@ -1,0 +1,16 @@
+#ifndef INSTR_H
+#define INSTR_H
+
+#define INSTR_ALLOC_SIZE 64
+#define INSTR_ASM_SIZE "64"
+
+enum INSN {
+	END 	= INSTR_ALLOC_SIZE * 0,
+	J	= INSTR_ALLOC_SIZE * 1,
+	JZ	= INSTR_ALLOC_SIZE * 2,
+	ADD	= INSTR_ALLOC_SIZE * 3,
+	SUB	= INSTR_ALLOC_SIZE * 4,
+	LDRC	= INSTR_ALLOC_SIZE * 5,
+};
+
+#endif // INSTR_H

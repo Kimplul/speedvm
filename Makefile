@@ -1,18 +1,12 @@
-CFLAGS := -Wall -O2
+CFLAGS := -Wall -O2 -g
 
 exec: run.o main.o
-	$(CC) -g $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@
 
-main.c: instr.h
-run.c: run.inc 
+main.c: run.h instr.h
+run.c: run.inc run.h instr.h
 %.o: %.c
 	$(CC) -c -g $< -o $@
-
-instr.h: run.o
-	@echo "Updating instrs"
-	objdump -d $< \
-	| sed 's/^0\+/0x/g' \
-	| awk -f load_addrs.awk > $@
 
 run.inc: run.s
 	@echo "Updating ASM"
@@ -20,4 +14,4 @@ run.inc: run.s
 
 .PHONY: clean
 clean:
-	rm exec instr.h run.inc *.o
+	rm exec run.inc *.o
