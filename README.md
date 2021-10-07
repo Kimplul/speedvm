@@ -7,7 +7,7 @@ Decoding these instructions is a fairly slow process, and is usually done by jum
 What this demo tries to show is how you can (to an extent) skip the decoding phase by using the opcode as a jumpt address directly.
 
 Because compilers can't realistically do this automatically, some assembly is required. How much is up to the implementer, and in
-this repo I've demonstrated two approaches.
+this repo I've demonstrated two mixed C/ASM approaches along with three more typical ones to compare against.
 
 # Structure
 
@@ -20,6 +20,16 @@ opcodes. See `instr.h` for an example.
 and only the opcode decoding written in assembly. Variable-width instruction space does not allow for inter-arch pre-compiled code execution, but significantly
 cuts down on code footprint. The binary produces by GCC on my system was slightly slower than the hand-written assembly version, but the added benefit of
 being able to use a high-level language is notable.
+
++ 'cswitch' branch: A conventional switch statement, which is arguably what most
+people come up with when they attempt to write a VM.
+
++ `uswitch` branch: A more unconventional switch statement, where each
+instruction has its own switch statment that contains a goto to the
+implementation of the next instruction.
+
++ `jit` branch: For shits and giggles, just to see how balls to the walls fast
+we can do this.
 
 Note that you can use either fixed-width or variable-width with either C or assembly, I just chose these two combinations for demonstration purposes.
 
@@ -37,13 +47,16 @@ For more info look into `main.c`.
 The test case I chose to use was a simple loop that sums the first billion integers. The speedVM 'assembly' can be found in `main.c`, and some popular
 scripting language equivalents in `loop.*`. Here's a table of how long each file took to run:
 
-| Language     | Time (s) |
-|--------------|----------|
-| speedVM, C   | 9.25     |
-| speedVM, ASM | 8.36     |
-| AWK          | 43.14    |
-| Perl         | 42.35    |
-| Lua          | 18.61    |
+| Language                       | Time (s) |
+|--------------------------------|----------|
+| speedVM, JIT                   | 0.36     |
+| speedVM, unconventional switch | 6.50     |
+| speedVM, ASM                   | 8.36     |
+| speedVM, conventional switch   | 8.75     |
+| speedVM, C                     | 9.25     |
+| Lua                            | 18.61    |
+| AWK                            | 43.14    |
+| Perl                           | 42.35    |
 
 Note that I do not claim this test is in any way fair, as speedVM doesn't have a language front-end and the loop I manually wrote is very tight.
 
@@ -54,7 +67,19 @@ Note that I do not claim this test is in any way fair, as speedVM doesn't have a
 `exec`
 
 # General notes, thoughts and ramblings
-This is not supposed to be the fastes possible VM, I'm sure you could come up with more efficient assembly or even a faster instruction set. For example,
-`ADD` and `SUB` use three operands, but only two are strictly necessary in this case. This leads to extra memory operations, and thus to slower execution.
-Also, if you wanted EXTREME looping speed from your scripting language, a JIT compiler would probably be the best bet. JIT compilers, however, have larger
-overhead and in situations where there is very little code reentrance, could end up being slower than a more naive approach, such as this one.
+From the table we can see that using a typical switch statement and completely ignoring
+my idea about hard-coding the opcodes to be a jump table in itself seems to be
+quicker when using regular C. If you write the runner in assembly, the idea
+itself might save a little bit of time, but at a pretty major drawback in
+development speed and debugging difficulty. I'm guessing the compiler has less
+room to optimize in situations where the user inserts some of their own assembly
+into the middle of their code, and while using a jump table might save time on
+paper, it is outweighed by other optimisations the compiler can do when you
+stick to 'conventional' code.
+
+I'm sort of surprised my unconventional switch statement turned out to be as
+fast as it was, in theory it saves one jump between each VM instruction but I
+didn't expect it to play such a massive role.
+
+Naturally, a JITed function is faster than almost anything else. When this
+JITing should be done, is a more complicated question.
