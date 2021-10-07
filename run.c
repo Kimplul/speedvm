@@ -29,35 +29,61 @@
 #define INSTR_START(i) i##_LABEL:
 #define INSTR_END(p) INSTR_SWITCH(p)
 
-uint64_t run(int64_t *p)
+static int64_t registers[0xffff] = {0};
+
+static void ldrc(const int64_t *p)
+{
+	registers[RSLOT1(*p)] = VSLOT2(*p);
+}
+
+static void add(const int64_t *p)
+{
+	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
+}
+
+static void sub(const int64_t *p)
+{
+	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
+}
+
+static int64_t *jz(const int64_t *p)
+{
+	return ADDPD(p, (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0));
+}
+
+static int64_t *j(const int64_t *p)
+{
+	return ADDPD(p, VSLOT1(*p));
+}
+
+uint64_t run(const int64_t *p)
 {
 	int64_t result = 0;
-	int64_t registers[0xffff] = {0};
 	--p;
 
 	INSTR_SWITCH(p);
 
 	INSTR_START(LDRC);
-	registers[RSLOT1(*p)] = VSLOT2(*p);
+	ldrc(p);
 	INSTR_END(p);
 
 	INSTR_START(ADD);
-	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
+	add(p);
 	INSTR_END(p);
 
 	INSTR_START(SUB);
-	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
+	sub(p);
 	INSTR_END(p);
 
 	INSTR_START(JZ);
-	p = ADDPD(p, (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0));
+	p = jz(p);
 	INSTR_END(p);
 
 	INSTR_START(J);
-	p = ADDPD(p, VSLOT1(*p));
+	p = j(p);
 	INSTR_END(p);
-bottom:
 
+bottom:
 	result = registers[3];
 
 	return result;
