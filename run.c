@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "instr.h"
 
 #define OPCODE(x) ((uint16_t)(x))
 
@@ -15,7 +16,6 @@
 
 #define INSTR(x) x: asm(".global " QUOTE(INSTR_##x) "\n" QUOTE(INSTR_##x)":\n")
 
-__attribute__((no_reorder))
 uint64_t run(int64_t *p)
 {
 	int64_t result = 0;
@@ -23,41 +23,30 @@ uint64_t run(int64_t *p)
 	--p;
 
 top:
-	p++;
-	asm goto (
-			"lea 5(%%rip), %%rax\n"
-			"add %[p], %%rax\n"
-			"jmp *%%rax\n"
-			".global INSTR_BEGIN\n"
-			"INSTR_BEGIN:\n"
-			: /* no output */
-			: [p] "g" ((uint64_t)OPCODE(*p))
-			: "rax", "cc"
-			: LDRC, ADD, SUB, JZ, J, END
-	    );
+	switch(OPCODE(*(++p))){
+		case END:
+			goto bottom;
 
-	INSTR(END);
-	goto bottom;
+		case LDRC:
+			registers[RSLOT1(*p)] = VSLOT2(*p);
+			goto top;
 
-	INSTR(LDRC);
-	registers[RSLOT1(*p)] = VSLOT2(*p);
-	goto top;
+		case ADD:
+			registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
+			goto top;
 
-	INSTR(ADD);
-	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
-	goto top;
+		case SUB:
+			registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
+			goto top;
 
-	INSTR(SUB);
-	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
-	goto top;
+		case JZ:
+			p = ADDPD(p, (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0));
+			goto top;
 
-	INSTR(JZ);
-	p = ADDPD(p, (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0));
-	goto top;
-
-	INSTR(J);
-	p = ADDPD(p, VSLOT1(*p));
-	goto top;
+		case J:
+			p = ADDPD(p, VSLOT1(*p));
+			goto top;
+	}
 
 bottom:
 
