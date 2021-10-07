@@ -16,38 +16,46 @@
 
 #define INSTR(x) x: asm(".global " QUOTE(INSTR_##x) "\n" QUOTE(INSTR_##x)":\n")
 
+#define INSTR_SWITCH(p)\
+	switch(OPCODE(*(++p))){\
+		case END: goto bottom; \
+		case LDRC: goto LDRC_LABEL; \
+		case ADD: goto ADD_LABEL; \
+		case SUB: goto SUB_LABEL; \
+		case JZ: goto JZ_LABEL; \
+		case J: goto J_LABEL;\
+	}
+
+#define INSTR_START(i) i##_LABEL:
+#define INSTR_END(p) INSTR_SWITCH(p)
+
 uint64_t run(int64_t *p)
 {
 	int64_t result = 0;
 	int64_t registers[0xffff] = {0};
 	--p;
 
-top:
-	switch(OPCODE(*(++p))){
-		case END:
-			goto bottom;
+	INSTR_SWITCH(p);
 
-		case LDRC:
-			registers[RSLOT1(*p)] = VSLOT2(*p);
-			goto top;
+	INSTR_START(LDRC);
+	registers[RSLOT1(*p)] = VSLOT2(*p);
+	INSTR_END(p);
 
-		case ADD:
-			registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
-			goto top;
+	INSTR_START(ADD);
+	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] + registers[RSLOT1(*p)];
+	INSTR_END(p);
 
-		case SUB:
-			registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
-			goto top;
+	INSTR_START(SUB);
+	registers[RSLOT3(*p)] = registers[RSLOT2(*p)] - registers[RSLOT1(*p)];
+	INSTR_END(p);
 
-		case JZ:
-			p = ADDPD(p, (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0));
-			goto top;
+	INSTR_START(JZ);
+	p = ADDPD(p, (registers[RSLOT1(*p)] == 0 ? VSLOT2(*p) : 0));
+	INSTR_END(p);
 
-		case J:
-			p = ADDPD(p, VSLOT1(*p));
-			goto top;
-	}
-
+	INSTR_START(J);
+	p = ADDPD(p, VSLOT1(*p));
+	INSTR_END(p);
 bottom:
 
 	result = registers[3];
